@@ -17,3 +17,11 @@
   cursor: pointer;
   color: #1a202c;
 }
+
+.esri-popup__actions {
+  display: none !important;
+}
+
+.esri-component {
+  z-index: 100 !important;
+}

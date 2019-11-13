@@ -75,20 +75,13 @@ require([
     evt.stopPropagation();
     mapPoint = evt.mapPoint;
     showPopup(mapPoint)
-
-    // view.popup.open({
-    //   title: "Posición seleccionada",
-    //   location: evt.mapPoint,
-    //   content: "<b>X:</b> " + lat + ", <br><b>Y:</b> " + lon
-    //     + "<br><br><input type='button' class='btn' value='Agregar parada' onclick='addStop(mapPoint); view.popup.close()'/>"
-    // });
   });
 
   function showPopup(pt) {
     view.popup.open({
       location: pt,
       title: + Math.round(pt.longitude * 100000) / 100000 + ", " + Math.round(pt.latitude * 100000) / 100000,
-      content: "<input type='button' value='Agregar parada' class='btn' onclick='addStop(pt); view.popup.close()'/>",      
+      content: "<button type='button' class='bg-gray-800 text-sm text-gray-100 py-1 px-4 mx-1 my-2 rounded-lg shadow-md' onclick='addStop(pt); view.popup.close()'><i class='fas fa-map-marker-alt mr-2'></i>Agregar Parada</button>",
     });
   }
 

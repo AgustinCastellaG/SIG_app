@@ -31,7 +31,7 @@ require([
   function showPopup(address, pt) {
     view.popup.open({
       title: + Math.round(pt.longitude * 100000) / 100000 + ", " + Math.round(pt.latitude * 100000) / 100000,
-      content: address + "<br><br> <input type='button' value='Agregar parada' class='btn' onclick='addStop(pt); view.popup.close()'/>",
+      content: address + "<br><br> <button type='button' class='bg-gray-800 text-sm text-gray-100 py-1 px-4 mx-1 my-2 rounded-lg shadow-md' onclick='addStop(pt); view.popup.close()'><i class='fas fa-map-marker-alt mr-2'></i>Agregar Parada</button>",
       location: pt
     })
   }
