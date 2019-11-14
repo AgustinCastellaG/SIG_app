@@ -45,6 +45,12 @@ require([],
       document.getElementById("stopButton").disabled = true;
       document.getElementById("playButton").disabled = false;
       document.getElementById("pauseButton").disabled = true;
+      view.graphics.removeAll();
+      view.popup.close();
+      view.graphics.add(lastRoute);
+      countiesLayer.removeAll();
+      $('#simulationBox').addClass('hidden');
+      document.getElementById('startTravelButton').disabled = false;
     }
 
     updateCarSymbol = function () {

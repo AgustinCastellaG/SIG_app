@@ -1,7 +1,7 @@
 var map, view, searchTemplate, search, circle;
-var stopSymbol, routeSymbol, carSymbol, bufferSymbol;
+var stopSymbol, routeSymbol, regularCarSymbol, bufferSymbol, bufferParams, graphicBuffer, carGraphic;
 
-var counties, countiesLayer;
+var counties, countiesLayer, countySymbol;
 
 // chequear si se pueden sacar
 var graphicCounties, currentPoint;
@@ -16,10 +16,11 @@ var features = [];
 var canceled = false;
 var paused = false;
 
+var speed;
 var minSpeed = 1;
 var maxSpeed = 10;
 var startSpeed = 3;
-var bufferDistance = 8;
+var bufferDistance = 5;
 
 
 require([
@@ -70,7 +71,7 @@ require([
     map: map,
     container: "viewDiv",
     center: new Point(-73.935242, 40.730610),
-    zoom: 9
+    zoom: 12
   });
 
   map.add(new TileLayer("http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer"));
@@ -169,21 +170,21 @@ require([
   startTravel = async function () {
     document.getElementById('startTravelButton').disabled = true;
     $('#simulationBox').removeClass('hidden');
-    var route = 0;
+    var point = 0;
+    var stop = 0;
     canceled = false;
     paused = false;
-    var speed = startSpeed;
-    carSymbol = regularCarSymbol
+    speed = startSpeed;
     bufferDistance = bufferValue.value;
     document.getElementById("pauseButton").disabled = false;
     document.getElementById("stopButton").disabled = false;
     document.getElementById("minusButton").disabled = false;
     document.getElementById("plusButton").disabled = false;
-    while (route < simulationRoute.geometry.paths[0].length) {
-      if (!canceled) {
+    while (!canceled && stop < simulationRoute.geometry.paths.length) {
+      while (!canceled && point < simulationRoute.geometry.paths[stop].length) {
         if (!paused) {
-          currentPoint = new Point(simulationRoute.geometry.paths[0][route][0], simulationRoute.geometry.paths[0][route][1])
-
+          currentPoint = new Point(simulationRoute.geometry.paths[stop][point][0], simulationRoute.geometry.paths[stop][point][1])
+          console.log(simulationRoute.geometry.paths[stop][point][0], simulationRoute.geometry.paths[stop][point][1]);
           bufferParams = new BufferParameters();
           bufferParams.geometries = [currentPoint];
           bufferParams.distances = [bufferDistance];
@@ -191,14 +192,12 @@ require([
           bufferParams.outSpatialReference = view.spatialReference;
 
           geometryService.buffer(bufferParams).then(showBuffer);
-          route = route + speed;
+          point = point + speed;
         }
-      } else {
-        view.popup.close();
-        countiesLayer.removeAll();
-        route = 0;
+        await sleep(4000);
       }
-      await sleep(3000);
+      stop += 1;
+      point = 0;
     }
     document.getElementById("pauseButton").disabled = true;
     document.getElementById("playButton").disabled = true;
@@ -212,6 +211,7 @@ require([
   }
 
   showBuffer = function (geometries) {
+    console.log(geometries)
     getCounties();
 
     view.graphics.remove(graphicBuffer);
@@ -219,7 +219,7 @@ require([
     view.graphics.add(graphicBuffer);
 
     view.graphics.remove(carGraphic);
-    carGraphic = new Graphic(car, carSymbol);
+    carGraphic = new Graphic(currentPoint, regularCarSymbol);
     view.graphics.add(carGraphic);
 
     circle = geometries[0];
@@ -232,6 +232,7 @@ require([
     query.outfields = ["*"];
 
     counties.queryFeatures(query).then(function (featureSet) {
+      console.log(featureSet);
       var inBuffer = [];
       var areas = [];
       var feat = featureSet.features;
@@ -267,10 +268,10 @@ require([
           view.popup.close();
           if (!canceled) {
             view.popup.open({
-              location: car,
-              title: "VALOR DE POBLACIÓN PONDERADO",
+              location: currentPoint,
+              title: "Población Aproximada",
               alignment: "top-center",
-              content: "<b>Total de población en el buffer:</b> " + populationValue.toLocaleString() + " habitantes"
+              content: "<b>Total de población dentro del buffer:</b> " + populationValue.toLocaleString() + " habitantes"
             });
           }
         });
@@ -281,9 +282,7 @@ require([
   calculatePopulation = function (features, circleArea, areas) {
     var popTotal = 0;
     for (var x = 0; x < features.length; x++) {
-      mult = areas[x] * 100;
-      percentage = mult / circleArea;
-      fraction = areas[x] / circleArea;
+      fraction = areas[x] / features[x].attributes["LANDAREA"] * 0.386 //sq km to sq miles
       popCounty = features[x].attributes["TOTPOP_CY"] * fraction;
       popTotal = popTotal + popCounty;
     }
@@ -357,8 +356,6 @@ require([
     document.getElementById("stops-list").innerHTML = "";
 
     $('#simulationBox').addClass('hidden');
-    $('#boxesContainer').addClass('justify-end');
-    $('#boxesContainer').removeClass('justify-between');
     // document.getElementById("routes").hidden = true;
     // document.getElementById("routes-list").hidden = true;
     console.log('buttons reset')

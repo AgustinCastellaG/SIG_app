@@ -31,9 +31,9 @@ require([
       SimpleFillSymbol.STYLE_SOLID,
       new SimpleLineSymbol(
         SimpleLineSymbol.STYLE_SOLID,
-        new dojo.Color([80, 120, 255, 0.65]), 2
+        new dojo.Color([0, 0, 255, 0.65]), 2
       ),
-      new dojo.Color([80, 120, 255, 0.35])
+      new dojo.Color([0, 0, 255, 0.35])
     );
 
     countySymbol = new SimpleFillSymbol(
