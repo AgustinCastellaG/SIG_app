@@ -1,77 +1,48 @@
 require([
-	"esri/symbols/SimpleMarkerSymbol",
-	"esri/symbols/SimpleLineSymbol",
+  "esri/symbols/SimpleMarkerSymbol",
+  "esri/symbols/SimpleLineSymbol",
   "esri/symbols/SimpleFillSymbol",
   "esri/symbols/PictureMarkerSymbol"
-	], 
+],
 
-	function(SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, PictureMarkerSymbol) {
+  function (SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, PictureMarkerSymbol) {
 
-		stopSymbol = new PictureMarkerSymbol({
+    stopSymbol = new PictureMarkerSymbol({
       type: "picture-marker",
-      url: '../gpsIcon.png',
-      width: "28px",
-      height: "28px"
-		})
-		
-		routeSymbol = new SimpleLineSymbol({
-			color: [0, 0, 255, 0.5],
-			width: 5
-		});
+      url: '../gpsIcon.svg',
+      width: "20px",
+      height: "25px",
+    });
 
-		regularCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [255, 0, 255, 0.5]
-		});
+    regularCarSymbol = new PictureMarkerSymbol({
+      type: "picture-marker",
+      url: '../truck-solid.svg',
+      width: "35px",
+      height: "28px",
+    });
 
-		fastCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [160, 0, 0, 0.5]
-		});
+    stoppedCarSymbol = new SimpleMarkerSymbol({
+      style: 'diamond',
+      size: 20,
+      color: [0, 0, 0, 0.5]
+    });
 
-		fastestCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [255, 0, 0, 0.5]
-		});
+    bufferSymbol = new SimpleFillSymbol(
+      SimpleFillSymbol.STYLE_SOLID,
+      new SimpleLineSymbol(
+        SimpleLineSymbol.STYLE_SOLID,
+        new dojo.Color([80, 120, 255, 0.65]), 2
+      ),
+      new dojo.Color([80, 120, 255, 0.35])
+    );
 
-		slowCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [0, 180, 0, 0.5]
-		});
-
-		slowestCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [0, 255, 0, 0.5]
-		});
-
-		stoppedCarSymbol = new SimpleMarkerSymbol({
-			style: 'diamond',
-			size: 20,
-			color: [0, 0, 0, 0.5]
-		});
-
-		
-		bufferSymbol = new SimpleFillSymbol(
-			SimpleFillSymbol.STYLE_SOLID,
-			new SimpleLineSymbol(
-				SimpleLineSymbol.STYLE_SOLID,
-				new dojo.Color([80,120,255,0.65]), 2
-			),
-			new dojo.Color([80,120,255,0.35])
-		);
-
-		countySymbol = new SimpleFillSymbol(
-			SimpleFillSymbol.STYLE_SOLID,
-			new SimpleLineSymbol(
-				SimpleLineSymbol.STYLE_SOLID,
-				new dojo.Color([80,120,100,0.65]), 2
-			),
-			new dojo.Color([80,120,100,0.35])
-		);
-	}
+    countySymbol = new SimpleFillSymbol(
+      SimpleFillSymbol.STYLE_SOLID,
+      new SimpleLineSymbol(
+        SimpleLineSymbol.STYLE_SOLID,
+        new dojo.Color([80, 120, 100, 0.65]), 2
+      ),
+      new dojo.Color([80, 120, 100, 0.35])
+    );
+  }
 )

@@ -15,7 +15,7 @@
 
 .btnicon:hover {
   cursor: pointer;
-  color: #1a202c;
+  color: #f7fafc;
 }
 
 .esri-popup__actions {
@@ -24,4 +24,21 @@
 
 .esri-component {
   z-index: 100 !important;
+}
+
+.startTravelButton:disabled {
+  color: #f7fafc;
+  background-color: #2d3748;
+  cursor: default;
+}
+
+.simulationButton:hover {
+  cursor: pointer;
+  color: #f7fafc;
+}
+
+.simulationButton:disabled {
+  color: #4a5568;
+  cursor: default;
+  pointer-events: none;
 }

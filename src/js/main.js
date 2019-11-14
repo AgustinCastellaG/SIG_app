@@ -1,4 +1,14 @@
-var map, view, routeTask, searchTemplate, search, stopSymbol, routeSymbol;
+var map, view, routeTask, searchTemplate, search, stopSymbol, routeSymbol, carSymbol, currentPoint, simulationRoute;
+var counties, countiesLayer, graphicCounties;
+
+var canceled = false;
+var paused = false;
+
+var minSpeed = 1;
+var maxSpeed = 10;
+var startSpeed = 3;
+
+var bufferDistance = 8;
 
 require([
   "esri/Map",
@@ -61,7 +71,7 @@ require([
     view.popup.open({
       location: mapPoint,
       title: + Math.round(mapPoint.longitude * 100000) / 100000 + ", " + Math.round(mapPoint.latitude * 100000) / 100000,
-      content: "<button type='button' class='bg-gray-800 text-sm text-gray-100 py-1 px-4 mx-1 my-2 rounded-lg shadow-md' onclick='addStop(mapPoint); view.popup.close()'><i class='fas fa-map-marker-alt mr-2'></i>Agregar Parada</button>",      
+      content: "<button type='button' class='bg-gray-800 text-sm text-gray-300 py-1 px-4 mx-1 my-2 rounded-lg shadow-md' onclick='addStop(mapPoint); view.popup.close()'><i class='fas fa-map-marker-alt mr-2'></i>Agregar Parada</button>",
     });
   });
 
@@ -122,12 +132,131 @@ require([
     }
   }
 
-  var simpleMarkerSymbol = {
-    type: "simple-marker",
-    color: [0, 102, 204],  // blue
-    outline: {
-      color: [255, 255, 255], // white
-      width: 1
+  startTravel = async function() {
+    document.getElementById('startTravelButton').disabled = true;
+    $('#simulationBox').removeClass('hidden');
+    $('#boxesContainer').removeClass('justify-end');
+    $('#boxesContainer').addClass('justify-between');
+    var route = 0;
+    canceled = false;
+    paused = false;
+    var speed = startSpeed;
+    carSymbol = regularCarSymbol
+    bufferDistance = bufferValue.value;
+    document.getElementById("pauseButton").disabled = false;
+    document.getElementById("stopButton").disabled = false;
+    document.getElementById("minusButton").disabled = false;
+    document.getElementById("plusButton").disabled = false;
+    while (route < simulationRoute.geometry.paths[0].length) {
+      if (!canceled) {
+        if (!paused) {
+          currentPoint = new Point(simulationRoute.geometry.paths[0][route][0], simulationRoute.geometry.paths[0][route][1])
+
+          bufferParams = new BufferParameters();
+          bufferParams.geometries = [currentPoint];
+          bufferParams.distances = [bufferDistance];
+          bufferParams.unit = GeometryService.UNIT_KILOMETER;
+          bufferParams.outSpatialReference = view.spatialReference;
+
+          geometryService.buffer(bufferParams).then(showBuffer);
+          route = route + speed;
+        }
+      } else {
+        view.popup.close();
+        countiesLayer.removeAll();
+        route = 0;
+      }
+      // await sleep(3000);
     }
-  };
+    document.getElementById("pauseButton").disabled = false;
+    document.getElementById("playButton").disabled = false;
+    document.getElementById("stopButton").disabled = false;
+    document.getElementById("minusButton").disabled = false;
+    document.getElementById("plusButton").disabled = false;
+  }
+
+  sleep = function (ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  showBuffer = function (geometries) {
+    getCounties();
+
+    view.graphics.remove(graphicBuffer);
+    graphicBuffer = new Graphic(geometries[0], bufferSymbol);
+    view.graphics.add(graphicBuffer);
+
+    view.graphics.remove(carGraphic);
+    carGraphic = new Graphic(car, carSymbol);
+    view.graphics.add(carGraphic);
+
+    circle = geometries[0];
+  }
+
+  getCounties = function () {
+    var query = counties.createQuery();
+    query.geometry = circle;
+    query.returnGeometry = true;
+    query.outfields = ["*"];
+
+    counties.queryFeatures(query).then(function (featureSet) {
+      var inBuffer = [];
+      var areas = [];
+      var feat = featureSet.features;
+      var circleArea;
+      var countiesGeometry = [];
+      countiesLayer.removeAll();
+      for (var i = 0; i < feat.length; i++) {
+        countiesGeometry.push(feat[i].geometry);
+        inBuffer.push(feat[i].attributes.OBJECTID);
+
+        graphicCounties = new Graphic(feat[i].geometry, countySymbol);
+        if (!canceled) {
+          countiesLayer.add(graphicCounties);
+        }
+      }
+      var areasAndLengthParamsCircle = new AreasAndLengthsParameters({
+        areaUnit: "square-kilometers",
+        lengthUnit: "kilometers",
+        polygons: [circle]
+      });
+      geometryService.areasAndLengths(areasAndLengthParamsCircle).then(function (results) {
+        circleArea = results.areas[0];
+      });
+      geometryService.intersect(countiesGeometry, circle).then(function (intersectionGeometry) {
+        var areasAndLengthParams = new AreasAndLengthsParameters({
+          areaUnit: "square-kilometers",
+          lengthUnit: "kilometers",
+          polygons: intersectionGeometry
+        });
+        geometryService.areasAndLengths(areasAndLengthParams).then(function (results) {
+          areas = results.areas;
+          var populationValue = calculatePopulation(feat, circleArea, areas);
+          view.popup.close();
+          if (!canceled) {
+            view.popup.open({
+              location: car,
+              title: "VALOR DE POBLACIÓN PONDERADO",
+              alignment: "top-center",
+              content: "<b>Total de población en el buffer:</b> " + populationValue.toLocaleString() + " habitantes"
+            });
+          }
+        });
+      });
+    });
+  }
+
+  calculatePopulation = function(features,circleArea,areas) {
+    var popTotal = 0;
+    for (var x = 0; x < features.length; x++) {
+      mult = areas[x] * 100;
+      percentage = mult / circleArea;
+      fraction = areas[x] / circleArea;
+      popCounty = features[x].attributes["TOTPOP_CY"] * fraction;
+      popTotal = popTotal + popCounty;
+    }
+    popTotal = Math.trunc(popTotal);
+    return popTotal;
+  }
+
 });
