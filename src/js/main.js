@@ -328,6 +328,7 @@ require([
   }
 
   clearMap = function () {
+    cancelSimulation();
     view.graphics.removeAll();
     view.popup.close();
 
@@ -341,6 +342,9 @@ require([
       })
     });
 
+    // clear stop list
+    document.getElementById("stops-list").innerHTML = "";
+
     // routeParams.stops = [];
     features = []
     stopsLength = 0;
@@ -351,9 +355,7 @@ require([
     document.getElementById("saveRouteButton").disabled = true;
     document.getElementById("startTravelButton").disabled = true;
     document.getElementById("resetButton").disabled = true;
-
-    // clear stop list
-    document.getElementById("stops-list").innerHTML = "";
+;
 
     $('#simulationBox').addClass('hidden');
     // document.getElementById("routes").hidden = true;
@@ -377,6 +379,7 @@ require([
     for (const elem of removeButtons) {
       elem.remove()
     }
+    view.graphics.remove(lastRoute)
 
     var stopsQuery = savedStops.createQuery();
     stopsQuery.objectIds = features;
@@ -402,11 +405,11 @@ require([
     document.getElementById("findRouteButton").disabled = true;
   }
 
-  saveRoute = function() {
+  saveRoute = function () {
     const name = prompt("Ingrese el nombre de la ruta");
     if (name != null && name != '') {
       lastRoute.attributes = {
-        "notes" : 'myRouteG7' + name
+        "notes": 'myRouteG7' + name
       };
       routes.applyEdits({
         addFeatures: [lastRoute]
@@ -416,67 +419,86 @@ require([
     }
   }
 
-  loadRoute = function(id) {
+  loadRoute = function (id) {
     view.graphics.removeAll();
+    // clear stop list
+    document.getElementById("stops-list").innerHTML = "";
+    
+    // routeParams.stops = [];
+    features = []
+    stopsLength = 0;
+    stops = [];
+
     const routeQuery = routes.createQuery();
     routeQuery.where = "objectid = " + id.toString();
-    routes.queryFeatures(routeQuery).then(function(res) {
+    routes.queryFeatures(routeQuery).then(function (res) {
       // draw route
       const loadedRoute = res.features[0];
       loadedRoute.symbol = routeSymbol;
+      lastRoute = res.features[0];
       view.graphics.add(loadedRoute);
 
-      simulationRoute = res.features[0];
-
-      document.getElementById("clearMapButton").disabled = false;
+      simulationRoute = res.features[0];    
       document.getElementById("startTravelButton").disabled = false;
-    });
+      document.getElementById("resetButton").disabled = false;
+    })       
   }
 
-  fetchRoutes = function() {
+  fetchRoutes = function () {
     const queryAll = routes.createQuery();
     queryAll.where = "notes LIKE 'myRouteG7%'";
-    queryAll.outFields = [ "objectid" ];
-    routes.queryFeatures(queryAll).then(function(objectIds) {
+    queryAll.outFields = ["objectid"];
+    routes.queryFeatures(queryAll).then(function (objectIds) {
       console.log(objectIds)
       // document.getElementById("routes-list").innerHTML = "";
       // document.getElementById("routes-list").hidden = false;
       // document.getElementById("routes").hidden = false;
       // document.getElementById("getSavedRoutes").hidden = true;
-      // ol = document.getElementById("routes-list");
       for (const elem of objectIds.features) {
         var query = routes.createQuery();
         query.where = `objectid = ${elem.attributes.objectid}`;
-        routes.queryFeatures(query).then(function(route) {
+        routes.queryFeatures(query).then(function (route) {
           name = route.features[0].attributes.notes.replace('myRouteG7', '');
+          id = route.features[0].attributes.objectid;
+
+          ol = document.getElementById("routes-list");
           li = document.createElement("li");
-          li.appendChild(document.createTextNode(name));
+          ol.appendChild(li);
+          i = document.createElement("i");
+          i.setAttribute('class', 'fas fa-route text-xs mr-2')
+          a = document.createElement("a");
+          a.appendChild(document.createTextNode(name));
+          a.setAttribute('id', id);
+          a.setAttribute('class', 'text-gray-300');
+          a.setAttribute('onclick', 'loadRoute(id)');
+          li.appendChild(i);
+          li.appendChild(a);
+          li.setAttribute('class', 'cursor-pointer')
         })
-
       }
-      for (index = 0; index < objectIds.features.length; index++) {
-        (function() {
-          var routeName = "";
-          var routy = objectIds.features[index].attributes.objectid;
+      // for (index = 0; index < objectIds.features.length; index++) {
+      //   (function () {
+      //     var routeName = "";
+      //     var routy = objectIds.features[index].attributes.objectid;
 
-          var queryId = savedRoutes.createQuery();
-          queryId.where = "objectid = " + routy.toString();
-          savedRoutes.queryFeatures(queryId).then(function(route) {
-            routeName = route.features[0].attributes.notes.slice(10);
-            routy = route.features[0].attributes.objectid;
-            li = document.createElement("li");
-            li.appendChild(document.createTextNode(routeName));
-            useRouteButton = document.createElement('cantSavedRoutes');
-            useRouteButton.setAttribute('id',routy);
-            useRouteButton.setAttribute('class', 'fas fa-route showRoute-icon');
-            useRouteButton.setAttribute('onclick', 'showRoute(id)');
-            li.appendChild(useRouteButton);
-            cantSavedRoutes++;
-            ol.appendChild(li);
-          })
-        })();
-      }
-    });
+      //     var queryId = savedRoutes.createQuery();
+      //     queryId.where = "objectid = " + routy.toString();
+      //     savedRoutes.queryFeatures(queryId).then(function (route) {
+      //       routeName = route.features[0].attributes.notes.slice(10);
+      //       routy = route.features[0].attributes.objectid;
+      //       li = document.createElement("li");
+      //       ol.appendChild(li);
+      //       a = document.createElement("a");
+      //       li.appendChild(document.createTextNode(routeName));
+      //       useRouteButton = document.createElement('cantSavedRoutes');
+      //       useRouteButton.setAttribute('id', routy);
+      //       useRouteButton.setAttribute('class', 'fas fa-route showRoute-icon');
+      //       useRouteButton.setAttribute('onclick', 'showRoute(id)');
+      //       li.appendChild(useRouteButton);
+      //       cantSavedRoutes++;
+      //     })
+      //   })();
+      });
   }
 
 });
