@@ -43,6 +43,8 @@ require([],
     cancelSimulation = function () {
       canceled = true;
       document.getElementById("stopButton").disabled = true;
+      document.getElementById("playButton").disabled = false;
+      document.getElementById("pauseButton").disabled = true;
     }
 
     updateCarSymbol = function () {

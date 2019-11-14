@@ -169,8 +169,6 @@ require([
   startTravel = async function () {
     document.getElementById('startTravelButton').disabled = true;
     $('#simulationBox').removeClass('hidden');
-    $('#boxesContainer').removeClass('justify-end');
-    $('#boxesContainer').addClass('justify-between');
     var route = 0;
     canceled = false;
     paused = false;
@@ -200,13 +198,13 @@ require([
         countiesLayer.removeAll();
         route = 0;
       }
-      // await sleep(3000);
+      await sleep(3000);
     }
-    document.getElementById("pauseButton").disabled = false;
-    document.getElementById("playButton").disabled = false;
-    document.getElementById("stopButton").disabled = false;
-    document.getElementById("minusButton").disabled = false;
-    document.getElementById("plusButton").disabled = false;
+    document.getElementById("pauseButton").disabled = true;
+    document.getElementById("playButton").disabled = true;
+    document.getElementById("stopButton").disabled = true;
+    document.getElementById("minusButton").disabled = true;
+    document.getElementById("plusButton").disabled = true;
   }
 
   sleep = function (ms) {
