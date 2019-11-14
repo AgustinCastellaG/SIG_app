@@ -10,6 +10,10 @@ var startSpeed = 3;
 
 var bufferDistance = 8;
 
+var stops = [];
+var stopsLength = 0;
+var features = [];
+
 require([
   "esri/Map",
   "esri/views/MapView",
@@ -76,63 +80,77 @@ require([
   });
 
 
-  addStop = function(mapPoint) {
-    console.log('verga');
-    let stopGraphic = new Graphic(mapPoint, stopSymbol);
-    view.graphics.add(stopGraphic);
+  addStop = function (mapPoint) {
+    let newStop = new Graphic(mapPoint, stopSymbol);
+    view.graphics.add(newStop);
 
-    possibleStop = webMercatorUtils.xyToLngLat(mapPoint.x,mapPoint.y);
-    stops[cantStops] = possibleStop;
+    newStopLongitude = Math.round(mapPoint.longitude * 100000) / 100000;
+    newStopLatitude = Math.round(mapPoint.latitude * 100000) / 100000;
+    newStopCoords = webMercatorUtils.xyToLngLat(mapPoint.x, mapPoint.y);
+    console.log(mapPoint.latitude)
+    stops[stopsLength] = newStopCoords;
 
-    newStop = new Graphic({
-      geometry: new Point(stops[cantStops][0], stops[cantStops][1]),
-      symbol: stopSymbol,
+    var feature = new Graphic({
+      geometry: mapPoint,
+      attributes: {
+        "Id": 'stop' + stopsLength.toString()
+      }
     });
-
-    var feature = new Graphic();
-    var geometry = mapPoint;
-    feature.geometry = geometry;
-    feature.attributes = {
-      "Id": 'sig2018g4-' + cantStops.toString()
-    };
 
     savedStops.applyEdits({
       addFeatures: [feature]
     }).then(function (res) {
-      console.log("Parada guardada");
+      console.log("Stop saved");
       features.push(res.addFeatureResults[0].objectId);
+      console.log(features)
     });
 
     ol = document.getElementById("stops-list");
-    li = document.createElement("li");
-    li.setAttribute('id',cantStops);
-    li.appendChild(document.createTextNode(possibleStop));
-    up = document.createElement('cantStops');
-    up.setAttribute('class', 'fas fa-chevron-up stop-icon');
-    up.setAttribute('onclick', 'moveUp(this)');
-    li.appendChild(up);
-    down = document.createElement('cantStops');
-    down.setAttribute('class', 'fas fa-chevron-down stop-icon');
-    down.setAttribute('onclick', 'moveDown(this)');
-    li.appendChild(down);
-    cross = document.createElement('cantStops');
-    cantStops++;
-    cross.setAttribute('class', 'fas fa-times stop-icon');
-    cross.setAttribute('onclick', 'deleteStop(this)');
-    li.appendChild(cross);
-    ol.appendChild(li);
 
-    document.getElementById("clearMap").disabled = false;
-    if (cantStops > 1) {
-      document.getElementById("findRoute").disabled = false;
-    }
-    if (document.getElementById("stops").hidden) {
-      document.getElementById("stops").hidden = false;
-      document.getElementById("stops-list").hidden = false;
+    li = document.createElement("li");
+    li.setAttribute('id', stopsLength);
+
+    div = document.createElement("div");
+    div.setAttribute('class', 'flex justify-between');
+
+    textWrapper = document.createElement("div");
+
+    i = document.createElement("i");
+    i.setAttribute('class', 'fas fa-map-marker-alt text-xs mr-2');
+
+    divIcons = document.createElement("div");
+
+    up = document.createElement('i');
+    up.setAttribute('class', 'fas fa-chevron-up text-xs ml-2 btnicon');
+    up.setAttribute('onclick', 'moveUp(this)');
+
+
+    down = document.createElement('i');
+    down.setAttribute('class', 'fas fa-chevron-down text-xs ml-2 btnicon');
+    down.setAttribute('onclick', 'moveDown(this)');
+
+    remove = document.createElement('i');
+    remove.setAttribute('class', 'fas fa-times text-xs ml-2 btnicon');
+    remove.setAttribute('onclick', 'deleteStop(this)');
+
+    textWrapper.appendChild(i);
+    textWrapper.appendChild(document.createTextNode('x: ' + newStopLatitude + ' y: ' + newStopLongitude));
+    divIcons.appendChild(up);
+    divIcons.appendChild(down);
+    divIcons.appendChild(remove);
+    div.appendChild(textWrapper);
+    div.appendChild(divIcons)
+    li.appendChild(div);
+    ol.appendChild(li);
+    stopsLength++;
+
+    document.getElementById("resetButton").disabled = false;
+    if (stopsLength > 1) {
+      document.getElementById("findRouteButton").disabled = false;
     }
   }
 
-  startTravel = async function() {
+  startTravel = async function () {
     document.getElementById('startTravelButton').disabled = true;
     $('#simulationBox').removeClass('hidden');
     $('#boxesContainer').removeClass('justify-end');
@@ -246,7 +264,7 @@ require([
     });
   }
 
-  calculatePopulation = function(features,circleArea,areas) {
+  calculatePopulation = function (features, circleArea, areas) {
     var popTotal = 0;
     for (var x = 0; x < features.length; x++) {
       mult = areas[x] * 100;
@@ -258,5 +276,74 @@ require([
     popTotal = Math.trunc(popTotal);
     return popTotal;
   }
+  
+  deleteStop = function (elem) {
+    const stopIndex = parseInt(elem.parentElement.parentElement.parentElement.id, 10);
+    view.graphics.remove(view.graphics.items[stopIndex]);
+
+    const queryStops = savedStops.createQuery();
+    queryStops.objectIds = [features[stopIndex]];
+    savedStops.queryFeatures(queryStops).then(function (featureSet) {
+      console.log('Obteniendo parada...');
+      savedStops.applyEdits({
+        deleteFeatures: [featureSet.features[0]]
+      }).then(function (e) {
+        console.log("Parada eliminada");
+      })
+    });
+
+    features.splice(stopIndex, 1);
+    stops.splice(stopIndex, 1);
+    stopsLength -= 1;
+
+    // remove html div with id= stopIndex
+    $(`#${stopIndex}`).remove();
+
+    //modify other elements position
+    for (let i = stopsLength; i > stopIndex; i--) {
+      $(`#${i}`).attr('id', i - 1);
+    }
+
+    if (stopsLength < 2) {
+      document.getElementById("findRouteButton").disabled = true;
+      document.getElementById("startTravelButton").disabled = true;
+      if (stopsLength == 0) {
+        // clearMap();
+      }
+    } else {
+    }
+  }
+
+  clearMap = function () {
+    view.graphics.removeAll();
+    view.popup.close();
+
+    const queryStops = savedStops.createQuery();
+    queryStops.objectIds = features;
+    savedStops.queryFeatures(queryStops).then(function (featureSet) {
+      savedStops.applyEdits({
+        deleteFeatures: featureSet.features
+      }).then(function (e) {
+        console.log("stops removed");
+      })
+    });
+
+    // routeParams.stops = [];
+    features = []
+    stopsLength = 0;
+    stops = [];
+    console.log('variables initialized');
+
+    document.getElementById("findRouteButton").disabled = true;
+    document.getElementById("saveRouteButton").disabled = true;
+    document.getElementById("startTravelButton").disabled = true;
+    document.getElementById("resetButton").disabled = true;
+    $('#simulationBox').addClass('hidden');
+    $('#boxesContainer').addClass('justify-end');
+    $('#boxesContainer').removeClass('justify-between');
+    // document.getElementById("routes").hidden = true;
+    // document.getElementById("routes-list").hidden = true;
+    console.log('buttons reset')
+}
 
 });

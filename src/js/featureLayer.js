@@ -4,7 +4,7 @@ require([
 
 	function(FeatureLayer) {
 
-		stops = new FeatureLayer("https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/IncidentsReport/FeatureServer/0", {
+		savedStops = new FeatureLayer("https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/IncidentsReport/FeatureServer/0", {
 			mode: FeatureLayer.MODE_ONDEMAND,
 			outFields: ["*"]
     });
