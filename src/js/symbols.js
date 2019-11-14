@@ -44,5 +44,10 @@ require([
       ),
       new dojo.Color([80, 120, 100, 0.35])
     );
+
+    routeSymbol = new SimpleLineSymbol({
+			color: [0, 170, 240, 0.6],
+			width: 4
+		});
   }
 )
