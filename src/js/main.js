@@ -1,9 +1,10 @@
-var map, view, searchTemplate, search, circle;
-var stopSymbol, routeSymbol, regularCarSymbol, bufferSymbol, bufferParams, graphicBuffer, carGraphic;
+var map, view, search, circle, lastRoute;
+var stopSymbol, routeSymbol, bufferSymbol, bufferParams, graphicBuffer, truckGraphic;
+
+var truckSymbol, regularTruckSymbol, stoppedTruckSymbol;
 
 var counties, countiesLayer, countySymbol;
 
-// chequear si se pueden sacar
 var graphicCounties, currentPoint;
 
 var routeTask, routeParams, simulationRoute;
@@ -12,16 +13,14 @@ var stops = [];
 var stopsLength = 0;
 var features = [];
 
-// simulation variables
 var canceled = false;
 var paused = false;
 
 var speed;
 var minSpeed = 1;
 var maxSpeed = 10;
-var startSpeed = 3;
+var startSpeed = 5;
 var bufferDistance = 5;
-
 
 require([
   "esri/Map",
@@ -70,8 +69,8 @@ require([
   view = new MapView({
     map: map,
     container: "viewDiv",
-    center: new Point(-73.935242, 40.730610),
-    zoom: 12
+    center: new Point(-77.03196, 38.89037),
+    zoom: 11
   });
 
   map.add(new TileLayer("http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer"));
@@ -102,7 +101,6 @@ require([
     newStopLongitude = Math.round(mapPoint.longitude * 100000) / 100000;
     newStopLatitude = Math.round(mapPoint.latitude * 100000) / 100000;
     newStopCoords = webMercatorUtils.xyToLngLat(mapPoint.x, mapPoint.y);
-    console.log(mapPoint.latitude)
     stops[stopsLength] = newStopCoords;
 
     var feature = new Graphic({
@@ -162,9 +160,6 @@ require([
     stopsLength++;
 
     document.getElementById("resetButton").disabled = false;
-    // if (stopsLength > 1) {
-    //   document.getElementById("findRouteButton").disabled = false;
-    // }
   }
 
   startTravel = async function () {
@@ -176,6 +171,7 @@ require([
     paused = false;
     speed = startSpeed;
     bufferDistance = bufferValue.value;
+    truckSymbol = regularTruckSymbol;
     document.getElementById("pauseButton").disabled = false;
     document.getElementById("stopButton").disabled = false;
     document.getElementById("minusButton").disabled = false;
@@ -211,16 +207,15 @@ require([
   }
 
   showBuffer = function (geometries) {
-    console.log(geometries)
     getCounties();
 
     view.graphics.remove(graphicBuffer);
     graphicBuffer = new Graphic(geometries[0], bufferSymbol);
     view.graphics.add(graphicBuffer);
 
-    view.graphics.remove(carGraphic);
-    carGraphic = new Graphic(currentPoint, regularCarSymbol);
-    view.graphics.add(carGraphic);
+    view.graphics.remove(truckGraphic);
+    truckGraphic = new Graphic(currentPoint, truckSymbol);
+    view.graphics.add(truckGraphic);
 
     circle = geometries[0];
   }
@@ -232,7 +227,6 @@ require([
     query.outfields = ["*"];
 
     counties.queryFeatures(query).then(function (featureSet) {
-      console.log(featureSet);
       var inBuffer = [];
       var areas = [];
       var feat = featureSet.features;
@@ -297,11 +291,9 @@ require([
     const queryStops = savedStops.createQuery();
     queryStops.objectIds = [features[stopIndex]];
     savedStops.queryFeatures(queryStops).then(function (featureSet) {
-      console.log('Obteniendo parada...');
       savedStops.applyEdits({
         deleteFeatures: [featureSet.features[0]]
       }).then(function (e) {
-        console.log("Parada eliminada");
       })
     });
 
@@ -309,10 +301,8 @@ require([
     stops.splice(stopIndex, 1);
     stopsLength -= 1;
 
-    // remove html div with id= stopIndex
     $(`#${stopIndex}`).remove();
 
-    //modify other elements position
     for (let i = stopsLength; i > stopIndex; i--) {
       $(`#${i}`).attr('id', i - 1);
     }
@@ -320,10 +310,6 @@ require([
     if (stopsLength < 2) {
       document.getElementById("findRouteButton").disabled = true;
       document.getElementById("startTravelButton").disabled = true;
-      if (stopsLength == 0) {
-        // clearMap();
-      }
-    } else {
     }
   }
 
@@ -355,11 +341,9 @@ require([
     document.getElementById("saveRouteButton").disabled = true;
     document.getElementById("startTravelButton").disabled = true;
     document.getElementById("resetButton").disabled = true;
-;
+    ;
 
     $('#simulationBox').addClass('hidden');
-    // document.getElementById("routes").hidden = true;
-    // document.getElementById("routes-list").hidden = true;
     console.log('buttons reset')
   }
 
@@ -423,8 +407,8 @@ require([
     view.graphics.removeAll();
     // clear stop list
     document.getElementById("stops-list").innerHTML = "";
-    
-    // routeParams.stops = [];
+
+    routeParams.stops = [];
     features = []
     stopsLength = 0;
     stops = [];
@@ -438,22 +422,18 @@ require([
       lastRoute = res.features[0];
       view.graphics.add(loadedRoute);
 
-      simulationRoute = res.features[0];    
+      simulationRoute = res.features[0];
       document.getElementById("startTravelButton").disabled = false;
       document.getElementById("resetButton").disabled = false;
-    })       
+    })
   }
 
   fetchRoutes = function () {
+    document.getElementById("routes-list").innerHTML = "";
     const queryAll = routes.createQuery();
     queryAll.where = "notes LIKE 'myRouteG7%'";
     queryAll.outFields = ["objectid"];
     routes.queryFeatures(queryAll).then(function (objectIds) {
-      console.log(objectIds)
-      // document.getElementById("routes-list").innerHTML = "";
-      // document.getElementById("routes-list").hidden = false;
-      // document.getElementById("routes").hidden = false;
-      // document.getElementById("getSavedRoutes").hidden = true;
       for (const elem of objectIds.features) {
         var query = routes.createQuery();
         query.where = `objectid = ${elem.attributes.objectid}`;
@@ -476,29 +456,7 @@ require([
           li.setAttribute('class', 'cursor-pointer')
         })
       }
-      // for (index = 0; index < objectIds.features.length; index++) {
-      //   (function () {
-      //     var routeName = "";
-      //     var routy = objectIds.features[index].attributes.objectid;
-
-      //     var queryId = savedRoutes.createQuery();
-      //     queryId.where = "objectid = " + routy.toString();
-      //     savedRoutes.queryFeatures(queryId).then(function (route) {
-      //       routeName = route.features[0].attributes.notes.slice(10);
-      //       routy = route.features[0].attributes.objectid;
-      //       li = document.createElement("li");
-      //       ol.appendChild(li);
-      //       a = document.createElement("a");
-      //       li.appendChild(document.createTextNode(routeName));
-      //       useRouteButton = document.createElement('cantSavedRoutes');
-      //       useRouteButton.setAttribute('id', routy);
-      //       useRouteButton.setAttribute('class', 'fas fa-route showRoute-icon');
-      //       useRouteButton.setAttribute('onclick', 'showRoute(id)');
-      //       li.appendChild(useRouteButton);
-      //       cantSavedRoutes++;
-      //     })
-      //   })();
-      });
+    });
   }
 
 });

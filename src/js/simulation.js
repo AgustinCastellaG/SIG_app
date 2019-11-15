@@ -6,7 +6,7 @@ require([],
       paused = true;
       document.getElementById("pauseButton").disabled = true;
       document.getElementById("playButton").disabled = false;
-      updateCarSymbol();
+      updateTruckSymbol();
     }
 
     play = function () {
@@ -15,28 +15,28 @@ require([],
       document.getElementById("pauseButton").disabled = false;
       document.getElementById("stopButton").disabled = false;
       document.getElementById("playButton").disabled = true;
-      updateCarSymbol();
+      updateTruckSymbol();
     }
 
     increaseSpeed = function () {
       if (speed < maxSpeed) {
-        ++speed;
+        speed += 1;
         if (speed == maxSpeed) {
           document.getElementById("plusButton").disabled = true;
         }
         document.getElementById("minusButton").disabled = false;
-        updateCarSymbol();
+        updateTruckSymbol();
       }
     }
 
     decreaseSpeed = function () {
       if (speed > minSpeed) {
-        --speed;
+        speed -= 1;
         if (speed == minSpeed) {
           document.getElementById("minusButton").disabled = true;
         }
         document.getElementById("plusButton").disabled = false;
-        updateCarSymbol();
+        updateTruckSymbol();
       }
     }
 
@@ -53,11 +53,24 @@ require([],
       document.getElementById('startTravelButton').disabled = false;
     }
 
-    updateCarSymbol = function () {
+    updateTruckSymbol = function () {
       if (paused || canceled) {
-        carSymbol = stoppedCarSymbol;
+        truckSymbol = stoppedTruckSymbol;
+        view.graphics.remove(truckGraphic);
+        truckGraphic = new Graphic(currentPoint, truckSymbol);
+        view.graphics.add(truckGraphic);
       } else {
-        carSymbol = regularCarSymbol;
+        if (speed == 1 || speed == 2) {
+          truckSymbol = ultraSlowTruckSymbol;
+        } else if (speed == 3 || speed == 4) {
+          truckSymbol = slowTruckSymbol;
+        } else if (speed == 5 || speed == 6) {
+          truckSymbol = regularTruckSymbol;
+        } else if (speed == 7 || speed == 8) {
+          truckSymbol = fastTruckSymbol;
+        } else if (speed == 9 || speed == 10) {
+          truckSymbol = ultraFastTruckSymbol;
+        }
       }
     }
 

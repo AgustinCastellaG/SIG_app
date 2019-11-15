@@ -25,8 +25,7 @@ require([
 			});
 
 			printTask.execute(params).then(result => {
-				var win = window.open(result.url, '_blank');
-				win.focus();
+				window.open(result.url, '_blank');
 			}).catch(error => {
 				alert('Error al exportar Mapa')
 				console.log(error.toString());
