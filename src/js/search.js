@@ -2,19 +2,6 @@ require([
   "esri/widgets/Search"
 ], function (Search) {
 
-
-  // search.on("select-result", function (event) {
-  //   var coords = { x: event.result.feature.geometry.latitude, y: event.result.feature.geometry.longitude }
-  //   coordsArray.push(coords);
-
-  //   var pointGraphic = new Graphic({
-  //     geometry: { type: "point", latitude: coords.x, longitude: coords.y },
-  //     symbol: simpleMarkerSymbol
-  //   });
-
-  //   view.graphics.add(pointGraphic);
-  // });
-
   var search = new Search({
     popupEnabled: false,
     view: view,
